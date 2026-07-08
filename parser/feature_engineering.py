@@ -1,5 +1,6 @@
 from datetime import datetime
 import ipaddress
+from core.event import SecurityEvent
 
 SEVERITY_SCORE = {
     "info": 0,
@@ -24,28 +25,35 @@ PROTOCOL_MAP = {
     "ICMP": 3
 }
 
+
 def extract_hour(timestamp):
     dt = datetime.fromisoformat(timestamp)
     return dt.hour
+
 
 def extract_day_of_week(timestamp):
     dt = datetime.fromisoformat(timestamp)
     return dt.weekday()
 
+
 def is_night(timestamp):
     hour = extract_hour(timestamp)
     return int(hour >= 18 or hour <= 6)
 
+
 def severity_score(severity):
     return SEVERITY_SCORE.get(severity, 0)
 
-def event_code(event):
-    return EVENT_MAP.get(event, 0)
+
+def event_code(event_type):
+    return EVENT_MAP.get(event_type, 0)
+
 
 def protocol_code(protocol):
     if protocol is None:
         return 0
     return PROTOCOL_MAP.get(protocol.upper(), 0)
+
 
 def is_private_ip(ip):
     if ip is None:
@@ -56,21 +64,27 @@ def is_private_ip(ip):
     except ValueError:
         return 0
 
-def engineer_features(normalized_log):
-   
+
+def engineer_features(event: SecurityEvent) -> SecurityEvent:
+    """
+    Generate ML features from a SecurityEvent.
+    """
+
     features = {
-        "hour": extract_hour(normalized_log["timestamp"]),
-        "day_of_week": extract_day_of_week(normalized_log["timestamp"]),
-        "is_night": is_night(normalized_log["timestamp"]),
+        "hour": extract_hour(event.timestamp),
+        "day_of_week": extract_day_of_week(event.timestamp),
+        "is_night": is_night(event.timestamp),
 
-        "severity_score": severity_score(normalized_log["severity"]),
-        "event_code": event_code(normalized_log["event_type"]),
+        "severity_score": severity_score(event.severity),
+        "event_code": event_code(event.event_type),
 
-        "port": normalized_log["port"] or 0,
-        "protocol": protocol_code(normalized_log["protocol"]),
+        "port": event.port or 0,
+        "protocol": protocol_code(event.protocol),
 
-        "source_private": is_private_ip(normalized_log["source_ip"]),
-        "destination_private": is_private_ip(normalized_log["destination_ip"])
+        "source_private": is_private_ip(event.source_ip),
+        "destination_private": is_private_ip(event.destination_ip)
     }
 
-    return features
+    event.add_features(features)
+
+    return event
