@@ -1,97 +1,80 @@
 from collections import defaultdict
 from datetime import datetime, timedelta
+from core.event import SecurityEvent
 
 # Stores failed login timestamps for each source IP
 failed_login_tracker = defaultdict(list)
 
-# Stores alerts
-alerts = []
 
+def detect_failed_login(event: SecurityEvent):
 
-def detect_failed_login(normalized_log):
-    """
-    Detect brute-force attacks.
-    Rule: 5 failed logins from same IP within 60 seconds.
-    """
+    if event.event_type != "failed_login":
+        return
 
-    if normalized_log["event_type"] != "failed_login":
-        return None
+    if event.source_ip is None:
+        return
 
-    source_ip = normalized_log["source_ip"]
+    current_time = datetime.fromisoformat(event.timestamp)
 
-    if source_ip is None:
-        return None
+    failed_login_tracker[event.source_ip].append(current_time)
 
-    current_time = datetime.fromisoformat(normalized_log["timestamp"])
-
-    failed_login_tracker[source_ip].append(current_time)
-
-    # Keep only last 60 seconds
-    failed_login_tracker[source_ip] = [
-        t for t in failed_login_tracker[source_ip]
+    failed_login_tracker[event.source_ip] = [
+        t for t in failed_login_tracker[event.source_ip]
         if current_time - t <= timedelta(seconds=60)
     ]
 
-    if len(failed_login_tracker[source_ip]) >= 5:
-        return {
-            "rule": "Brute Force Login",
-            "severity": "High",
-            "source_ip": source_ip,
-            "description": "5 or more failed logins within 60 seconds"
-        }
+    if len(failed_login_tracker[event.source_ip]) >= 5:
 
-    return None
-
-
-def detect_port_scan(normalized_log):
-
-    if normalized_log["event_type"] == "port_scan":
-        return {
-            "rule": "Port Scan",
-            "severity": "High",
-            "source_ip": normalized_log["source_ip"],
-            "description": "Possible reconnaissance activity"
-        }
-
-    return None
+        event.add_alert(
+            rule="Brute Force Login",
+            severity="High",
+            description="5 or more failed logins within 60 seconds",
+            source_ip=event.source_ip
+        )
 
 
-def detect_malware(normalized_log):
+def detect_port_scan(event: SecurityEvent):
 
-    if normalized_log["event_type"] == "malware":
-        return {
-            "rule": "Malware Detected",
-            "severity": "Critical",
-            "source_ip": normalized_log["source_ip"],
-            "description": "Malware indicator found"
-        }
+    if event.event_type == "port_scan":
 
-    return None
-
-
-def detect_high_risk_port(normalized_log):
-
-    dangerous_ports = [21, 22, 23, 3389, 445]
-
-    port = normalized_log["port"]
-
-    if port in dangerous_ports:
-        return {
-            "rule": "Sensitive Port Access",
-            "severity": "Medium",
-            "port": port,
-            "description": f"Connection on monitored port {port}"
-        }
-
-    return None
+        event.add_alert(
+            rule="Port Scan",
+            severity="High",
+            description="Possible reconnaissance activity",
+            source_ip=event.source_ip
+        )
 
 
-def run_rules(normalized_log):
+def detect_malware(event: SecurityEvent):
+
+    if event.event_type == "malware":
+
+        event.add_alert(
+            rule="Malware Detected",
+            severity="Critical",
+            description="Malware indicator found",
+            source_ip=event.source_ip
+        )
+
+
+def detect_high_risk_port(event: SecurityEvent):
+
+    dangerous_ports = [21, 22, 23, 445, 3389]
+
+    if event.port in dangerous_ports:
+
+        event.add_alert(
+            rule="Sensitive Port Access",
+            severity="Medium",
+            description=f"Connection on monitored port {event.port}",
+            port=event.port
+        )
+
+
+def run_rules(event: SecurityEvent) -> SecurityEvent:
     """
-    Run every detection rule.
+    Execute every detection rule.
     """
-
-    detections = []
 
     rules = [
         detect_failed_login,
@@ -101,9 +84,6 @@ def run_rules(normalized_log):
     ]
 
     for rule in rules:
-        alert = rule(normalized_log)
+        rule(event)
 
-        if alert:
-            detections.append(alert)
-
-    return detections
+    return event

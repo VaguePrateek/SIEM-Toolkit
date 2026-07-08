@@ -1,3 +1,5 @@
+from core.event import SecurityEvent
+
 RULE_SCORES = {
     "Brute Force Login": 35,
     "Port Scan": 25,
@@ -14,28 +16,7 @@ SEVERITY_BONUS = {
 }
 
 
-def calculate_risk(normalized_log, alerts):
-    score = 0
-
-    # Rule-based score
-    for alert in alerts:
-        score += RULE_SCORES.get(alert["rule"], 0)
-
-    # Severity score
-    score += SEVERITY_BONUS.get(normalized_log["severity"], 0)
-
-    # Sensitive ports
-    if normalized_log["port"] in [21, 22, 23, 445, 3389]:
-        score += 5
-
-    # Malware bonus
-    if normalized_log["event_type"] == "malware":
-        score += 15
-
-    return min(score, 100)
-
-
-def risk_level(score):
+def risk_level(score: int) -> str:
     if score >= 80:
         return "Critical"
     elif score >= 60:
@@ -44,24 +25,34 @@ def risk_level(score):
         return "Medium"
     elif score >= 20:
         return "Low"
+
     return "Informational"
 
 
-def build_event(normalized_log, features, alerts):
+def calculate_risk(event: SecurityEvent) -> SecurityEvent:
     """
-    Build one complete SIEM event.
+    Calculate the overall risk score for a SecurityEvent.
     """
 
-    score = calculate_risk(normalized_log, alerts)
+    score = 0
 
-    event = {
-        "log": normalized_log,
-        "features": features,
-        "alerts": alerts,
-        "risk": {
-            "score": score,
-            "level": risk_level(score)
-        }
-    }
+    # Score from triggered rules
+    for alert in event.alerts:
+        score += RULE_SCORES.get(alert.rule, 0)
+
+    # Severity bonus
+    score += SEVERITY_BONUS.get(event.severity, 0)
+
+    # Sensitive port bonus
+    if event.port in [21, 22, 23, 445, 3389]:
+        score += 5
+
+    # Malware bonus
+    if event.event_type == "malware":
+        score += 15
+
+    score = min(score, 100)
+
+    event.set_risk(score, risk_level(score))
 
     return event
