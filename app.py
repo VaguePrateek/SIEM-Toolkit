@@ -1,10 +1,7 @@
-from collector.sys_log import collect_sys_log
-from collector.net_log import collect_net_logs
-from collector.parse import save_logs
+from core.pipeline import process_log
 
-system = collect_sys_log()
-network = collect_net_logs()
+raw_log = "Failed password for admin from 192.168.1.15 using TCP port 22"
 
-save_logs("logs/collected_logs.jsonl", {"system": system,"network": network})
+event = process_log(raw_log)
 
-print("Logs Collected Sucessfully!")
+print(event.to_dict())

@@ -67,6 +67,7 @@ def detect_high_risk_port(event: SecurityEvent):
             rule="Sensitive Port Access",
             severity="Medium",
             description=f"Connection on monitored port {event.port}",
+             source_ip=event.source_ip,
             port=event.port
         )
 
