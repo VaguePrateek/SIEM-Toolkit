@@ -43,7 +43,7 @@ def extract_proto(raw_log:str):
     protocols = ["TCP","UDP","ICMP"]
 
     for protocol in protocols:
-        if protocol.lower in raw_log.lower():
+        if protocol.lower() in raw_log.lower():
             return protocol
         
     return None
