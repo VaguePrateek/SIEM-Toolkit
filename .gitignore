@@ -14,3 +14,7 @@ ENV/
 Thumbs.db
 #Logs
 logs/
+#db_local
+siem.db
+#testing file
+test_db.py
