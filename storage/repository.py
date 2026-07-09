@@ -1,15 +1,20 @@
+# Repository layer for loading and storing events in the SIEM database.
 from storage.database import get_connection
 from core.event import SecurityEvent
 import json
 
 def load_events():
+    # Open a database connection.
     conn = get_connection()
     cursor = conn.cursor()
+
+    # Retrieve all stored events from the events table.
     cursor.execute("SELECT * FROM events")
     rows = cursor.fetchall()
     conn.close()
-    events = []
 
+    # Convert database rows into a list of dictionaries.
+    events = []
     for row in rows:
         events.append({
             "timestamp": row[1],
@@ -23,8 +28,11 @@ def load_events():
 
 
 def save_event(event: SecurityEvent):
+    # Persist a SecurityEvent into the database.
     conn = get_connection()
     cursor = conn.cursor()
+
+    # Insert the event data into the events table.
     cursor.execute("""
 INSERT INTO events (
     timestamp,
@@ -62,5 +70,6 @@ VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
 )
 ))
 
+    # Commit and close the database connection.
     conn.commit()
     conn.close()

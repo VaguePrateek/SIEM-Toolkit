@@ -1,8 +1,9 @@
+# Schema creation code for the SIEM database.
 from storage.database import get_connection
 
 
 def create_tables():
-
+    # Initialize the database schema if it does not already exist.
     conn = get_connection()
     cursor = conn.cursor()
 
@@ -34,5 +35,6 @@ def create_tables():
         )
     """)
 
+    # Commit schema changes and close connection.
     conn.commit()
     conn.close()
