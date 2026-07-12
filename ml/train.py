@@ -77,7 +77,13 @@ def train_model():
 
     model_path = "ml/models/random_forest.pkl"
 
-    joblib.dump(model, model_path)
+    joblib.dump(
+    {
+        "model": model,
+        "feature_names": list(X.columns)
+    },
+    "ml/models/random_forest.pkl"
+    )
 
     print(f"\nModel saved to: {model_path}")
 
