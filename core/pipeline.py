@@ -3,6 +3,7 @@ from parser.normalizer import normal_log
 from parser.feature_engineering import engineer_features
 from detection.rules import run_rules
 from detection.risk_score import calculate_risk
+from ml.predictor import predict_event
 
 
 def process_log(raw_log):
@@ -17,6 +18,8 @@ def process_log(raw_log):
 
     # Calculate risk score and assign a risk level.
     event = calculate_risk(event)
+
+    event = predict_event(event)
 
     # Return the enriched and scored event.
     return event
