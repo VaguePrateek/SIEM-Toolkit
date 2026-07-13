@@ -1,6 +1,8 @@
-import {useEffect, useState} from "react";
+import {use, useEffect, useState} from "react";
 import RiskChart from "../components/charts/RiskChart";
 import EventChart from "../components/charts/EventChart";
+import EventsTable from "../components/tables/EventTable";
+import AlertsTable from "../components/tables/AlertTable";
 import api from "../api/api";
 
 import SummaryCard from "../components/cards/SummaryCard";
@@ -15,14 +17,36 @@ import {
 export default function Dashboard(){
 
     const [stats,setStats]=useState(null);
+    const [alerts, setAlerts] = useState([]);
+    const [events, setEvents] = useState([]);
+    
 
     useEffect(()=>{
 
-        api.get("/stats")
-            .then(res=>setStats(res.data))
-            .catch(console.error);
+        async function loadDashboard() {
 
-    },[]);
+            try {
+
+                const [statsRes, alertsRes, eventsRes] =
+                    await Promise.all([
+                        api.get("/stats"),
+                        api.get("/alerts"),
+                        api.get("/events")
+                    ]);
+
+                setStats(statsRes.data);
+                setAlerts(alertsRes.data.alerts);
+                setEvents(eventsRes.data.events);
+
+            } catch (err) {
+                console.error(err);
+            }
+
+        }
+
+        loadDashboard();
+
+    }, []);
 
     if(!stats){
 
@@ -89,6 +113,13 @@ export default function Dashboard(){
                 <EventChart
                     events={stats.event_types}
                 />
+
+            </div>
+            <div className="grid gap-6 xl:grid-cols-2">
+
+                <AlertsTable alerts={alerts} />
+
+                <EventsTable events={events} />
 
             </div>
 
