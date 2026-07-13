@@ -8,11 +8,11 @@ function App() {
     return (
         <BrowserRouter>
 
-            <div className="flex bg-slate-950 text-white">
+            <div className="min-h-screen bg-slate-950 text-white">
 
                 <Sidebar />
 
-                <div className="flex-1">
+                    <div className="ml-64">
 
                     <Navbar />
 

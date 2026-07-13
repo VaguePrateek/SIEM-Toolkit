@@ -18,7 +18,7 @@ const menu = [
 
 export default function Sidebar() {
     return (
-        <aside className="w-64 h-screen bg-slate-900 border-r border-slate-800">
+        <aside className="fixed left-0 top-0 h-screen w-64bg-slate-900 border-rborder-slate-800z-50">
 
             <div className="p-6 text-2xl font-bold">
                 SIEM Toolkit
