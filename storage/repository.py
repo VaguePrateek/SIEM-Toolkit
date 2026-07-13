@@ -25,6 +25,93 @@ def get_alert_pages(limit=50):
 
     return total, pages
 
+def get_recent_events(limit=10):
+    conn = get_connection()
+    cursor = conn.cursor()
+
+    cursor.execute("""
+        SELECT *
+        FROM events
+        ORDER BY id DESC
+        LIMIT ?
+    """, (limit,))
+
+    rows = cursor.fetchall()
+    conn.close()
+
+    events = []
+
+    for row in rows:
+
+        events.append({
+            "id": row[0],
+            "timestamp": row[1],
+            "event_type": row[2],
+            "severity": row[3],
+            "source_ip": row[4],
+            "destination_ip": row[5],
+            "username": row[6],
+            "port": row[7],
+            "protocol": row[8],
+            "features": json.loads(row[9]) if row[9] else {},
+            "alerts": json.loads(row[10]) if row[10] else [],
+            "ml_prediction": json.loads(row[11]) if row[11] else {},
+            "raw_log": row[12],
+            "risk_score": row[13],
+            "risk_level": row[14]
+        })
+
+    return events
+
+def get_recent_alerts(limit=10):
+
+    conn = get_connection()
+    cursor = conn.cursor()
+
+    cursor.execute("""
+        SELECT
+            timestamp,
+            alerts_json,
+            risk_score,
+            risk_level
+        FROM events
+        WHERE alerts_json IS NOT NULL
+          AND alerts_json != '[]'
+        ORDER BY id DESC
+        LIMIT ?
+    """, (limit,))
+
+    rows = cursor.fetchall()
+    conn.close()
+
+    alerts = []
+
+    for timestamp, alerts_json, risk_score, risk_level in rows:
+
+        for alert in json.loads(alerts_json):
+
+            alerts.append({
+
+                "timestamp": timestamp,
+
+                "rule": alert["rule"],
+
+                "severity": alert["severity"],
+
+                "source_ip": alert.get("source_ip"),
+
+                "port": alert.get("port"),
+
+                "description": alert["description"],
+
+                "risk_score": risk_score,
+
+                "risk_level": risk_level
+
+            })
+
+    return alerts[:limit]
+
 def get_alerts(page=1, limit=50):
     conn = get_connection()
     cursor = conn.cursor()

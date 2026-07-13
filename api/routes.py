@@ -9,6 +9,8 @@ from storage.repository import (
     get_alert_pages,
     get_alerts,
     get_events,
+    get_recent_events,
+    get_recent_alerts,
     get_total_pages
 )
 from fastapi import Query
@@ -68,3 +70,11 @@ def list_alerts(
         "total_pages": total_pages,
         "alerts": get_alerts(page, limit)
     }
+
+@router.get("/events")
+def events(limit: int = 10):
+    return get_recent_events(limit)
+
+@router.get("/alerts")
+def alerts(limit: int = 10):
+    return get_recent_alerts(limit)
