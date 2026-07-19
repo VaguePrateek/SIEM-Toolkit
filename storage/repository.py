@@ -245,6 +245,24 @@ def get_alert_count():
     conn.close()
     return count
 
+
+def get_ml_threat_count():
+    conn = get_connection()
+    cursor = conn.cursor()
+
+    cursor.execute("""
+        SELECT COUNT(*)
+        FROM events
+        WHERE ml_prediction_json IS NOT NULL
+          AND ml_prediction_json != '{}'
+          AND json_extract(ml_prediction_json, '$.prediction') = 1
+    """)
+
+    count = cursor.fetchone()[0]
+
+    conn.close()
+    return count
+
 def load_events():
     # Open a database connection.
     conn = get_connection()
